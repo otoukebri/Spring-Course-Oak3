@@ -1,13 +1,15 @@
 package rewards.internal.account;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.stereotype.Repository;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import javax.sql.DataSource;
-
-import org.springframework.dao.EmptyResultDataAccessException;
 
 import common.money.MonetaryAmount;
 import common.money.Percentage;
@@ -21,19 +23,20 @@ import common.money.Percentage;
  * Configure Dependency Injection for dataSource.  
  * Decide if you should use field level or setter injection. 
  */
-
+@Repository
 public class JdbcAccountRepository implements AccountRepository {
 
 	private DataSource dataSource;
+
+	@Autowired
+	public JdbcAccountRepository(final DataSource dataSource) {
+		this.dataSource = dataSource;
+	}
 
 	/**
 	 * Sets the data source this repository will use to load accounts.
 	 * @param dataSource the data source
 	 */
-
-	public void setDataSource(DataSource dataSource) {
-		this.dataSource = dataSource;
-	}
 
 	public Account findByCreditCard(String creditCardNumber) {
 		String sql = "select a.ID as ID, a.NUMBER as ACCOUNT_NUMBER, a.NAME as ACCOUNT_NAME, c.NUMBER as CREDIT_CARD_NUMBER, b.NAME as BENEFICIARY_NAME, b.ALLOCATION_PERCENTAGE as BENEFICIARY_ALLOCATION_PERCENTAGE, b.SAVINGS as BENEFICIARY_SAVINGS from T_ACCOUNT a, T_ACCOUNT_BENEFICIARY b, T_ACCOUNT_CREDIT_CARD c where ID = b.ACCOUNT_ID and ID = c.ACCOUNT_ID and c.NUMBER = ?";

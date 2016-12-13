@@ -13,5 +13,5 @@ public interface RestaurantRepository {
 	 * @param merchantNumber the merchant number
 	 * @return the restaurant
 	 */
-	public Restaurant findByMerchantNumber(String merchantNumber);
+	Restaurant findByMerchantNumber(String merchantNumber);
 }

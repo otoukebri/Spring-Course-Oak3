@@ -13,7 +13,7 @@ public interface AccountRepository {
 	 * @param creditCardNumber the credit card number
 	 * @return the account object
 	 */
-	public Account findByCreditCard(String creditCardNumber);
+	Account findByCreditCard(String creditCardNumber);
 
 	/**
 	 * Updates the 'savings' of each account beneficiary. The new savings balance contains the amount distributed for a
@@ -24,6 +24,6 @@ public interface AccountRepository {
 	 * care of applying relational updates to a modified Account entity automatically.
 	 * @param account the account whose beneficiary savings have changed
 	 */
-	public void updateBeneficiaries(Account account);
+	void updateBeneficiaries(Account account);
 
 }
