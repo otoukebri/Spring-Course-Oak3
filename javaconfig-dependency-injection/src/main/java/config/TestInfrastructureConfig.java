@@ -1,10 +1,10 @@
-package rewards;
-
-import javax.sql.DataSource;
+package config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+
+import javax.sql.DataSource;
 
 @Configuration
 public class TestInfrastructureConfig {
