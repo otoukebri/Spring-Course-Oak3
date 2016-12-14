@@ -14,10 +14,6 @@ Some important concepts of Spring Framework
 * Low Coupling
 * High Cohesion
 
-Beware of duplicate bean definitions  
-It is *not* illegal to define the same bean more than once. You will just get the last bean Spring sees defined.  
-To prevent this behavior look at `@Resource`
-
 ###Java Configuration Class
 
 functions should be declared `public`.  
@@ -51,6 +47,90 @@ open class RewardsConfig {
 }
 ```
 
+###Disambiguation
+Beware of duplicate bean definitions.   
+It is *not* illegal to define the same bean more than once. You will just get the last bean Spring sees defined.
+  
+To prevent this behavior look at `@Qualifier`
+
+```java
+@Component("transferService")
+public class TransferServiceImpl implements TransferService {
+    @Autowired
+    public TransferServiceImpl(@Qualifier("jdbcAccountRepository")
+                                       AccountRepository accountRepository) { ...}
+}
+
+@Component("jdbcAccountRepository")
+public class JdbcAccountRepository implements AccountRepository {..}
+
+@Component("jpaAccountRepository")
+public class JpaAccountRepository implements AccountRepository {..}
+```
+
+###Bean Resolution
+
+The way Spring finds the correct bean is in following order
+1. Look for unique bean of required type
+2. Use `@Qualifier` if supplied
+3. Try to find a mathing bean by name
+
+>3. Is is very much a fallback so you should avoid using this convention and make it more explicit
+
+####Explicit vs Implicit Bean Definition (Annotation Driven)
+
+Above is an example of an explicit bean definition file. Namely you provide all the beans in a configuration.  
+Implicit `autoMagically` tries and search for your `Components`
+
+Implicit Configuration
+```java
+@Component
+public class TransferServiceImpl implements TransferService {
+    @Autowired
+    public TransferServiceImpl(AccountRepository repo) {
+        this.accountRepository = repo;
+    }
+}
+```
+
+```java
+@Configuration
+@ComponentScan("com.bank")
+public class AnnotationConfig {
+    // No bean definition needed any more
+}
+```
+
+`@ComponentScan` searches for your beans in a particular package.
+
+####Java Configuration vs Annotations
+
+#####Java Configuration
+
+| Pro's                                                 | Cons         
+| ----------------------------------------------        |:-------------:
+| Is centralized in one (or a few places)               | More Verbose than annotations
+| Write any Java code you need                          | 
+| Strong type checking enforced by compiler (and IDE)   | 
+| Can be used for all classes (not just your own        | 
+
+#####Annotations
+
+| Pro's                                   | Cons         
+| ----------------------------------------|:-------------:
+| Single place to edit (just the class)   | Configuration spread across your code base 
+| Allows for very rapid development       | Only works for your own written code
+|                                         | Merges configuration and code (bad sep. of concerns)
+
+Best pratice is to use annotations as much as possible.
+
+In real life you will see these two being mixed.  
+Beans that are maintained by the company will be annotated and legacy code or code from dependencies
+will life in a Java configuration file.   
+ 
+One example where a Java configuration would be preferred is for a Datasource that you need to 
+configure with different parameters
+
 ####Descriptors
 
 You can define descriptors on the bean definitions
@@ -69,12 +149,47 @@ open class RewardsConfig { ... }
 
 ####Start the context
 
-//TODO : older ways creating the ApplicationContext
-
 Start the `ApplicationContext`
+
+Spring Boot:
 
 ```kotlin
 val context: ApplicationContext = SpringApplication.run(RewardsConfig::class.java)
+```
+
+Using XML
+
+```java
+SpringApplication.run(MainConfig.class);
+```
+
+```java
+@Configuration
+@ImportResource( {
+        "classpath:com/acme/application-config.xml",
+        "file:C:/Users/alex/application-config.xml" } )
+@Import(DatabaseConfig.class)
+public class MainConfig {}
+```
+Valid prefixes are:
+* classpath (default)
+* file
+* http
+ 
+>Multiple files are possible
+>Able to combine with `@Configuration` annotations 
+
+Some other ways to load the Context
+
+```java
+// Load Java Configuration class
+new AnnotationConfigApplicationContext(MainConfig.class);
+// Load from $CLASSPATH/com/acme/application-config.xml
+new ClassPathXmlApplicationContext(“com/acme/application-config.xml”);
+// Load from absolute path: C:/Users/alex/application-config.xml
+new FileSystemXmlApplicationContext(“C:/Users/alex/application-config.xml”);
+// Load from path relative to the JVM working directory
+new FileSystemXmlApplicationContext(“./application-config.xml”);
 ```
 
 ####Get beans from context
@@ -135,13 +250,63 @@ fun accountService() : AccountService = AccountService()
 
 ### XML Configuration
 
-Old way of configuring your beans.
+Old way of configuring your beans.  
 Spring pushes java configuration instead of XML.
-Matches it by type
 
-// **TODO**
+Example of a XML Configuration 
 
-Downsides to XML configuration
+
+```xml
+<beans profile=“prod”>
+    <bean id=“transferService” class=“com.acme.TransferServiceImpl”>
+        <property name=“repository” ref=“accountRepository” />
+    </bean>
+    <bean id=“accountRepository” class=“com.acme.JdbcAccountRepository”>
+    </bean>
+</beans>
+```
+
+You should now only be able to understand how you would apply the same principles as with Java
+Configuration for the XML configuration. 
+
+####FactoryBean Interface
+
+Is a fallback for complex configuration in XML.  
+implementing `FactoryBean<T>` interface allows you to have the factory pattern in place for XML
+configurations.
+
+>Even Java Configuration may use factory beans (but why should you)
+
+They are widely used in older frameworks  
+Some well known examples are:
+
+* EmbeddedDatabaseFactoryBean
+* JndiObjectFactoryBean
+* Creating remote proxies
+* Creating caching proxies
+* For configuring data access technologies
+
+####Namespaces
+
+Namespaces allow hiding of actual bean definitions you may want to add.  
+They can greatly reduce the XML configuration file.  
+
+```xml
+<context:property-placeholder location="db-config.properties" /> <!-- Hides 1 bean definition -->
+<aop:aspectj-autoproxy /> <!-- Hides 5 bean definitions -->
+<tx:annotation-driven /> <!-- Hides more than 15 bean definitions -->
+```
+
+>Common practice do not use a versioned `*.xsd` file. Always go for the un-versioned. This will
+allow you to always be on the latest version. And makes sure you have an easier migration.
+
+Some examples are:
+
+* aop (aspect oriented programming)
+* tx (transactions)
+* util
+* jms
+* context
 
 ##Property Values
 
@@ -239,4 +404,212 @@ Under tests (and only then) you can use the `@ActiveProfiles`
 class Test
 ```
 
-##SPEL
+##SPEL 
+
+Short for Spring Expression Language
+
+```java
+@Configuration
+class TaxConfig
+{
+    @Value("#{ systemProperties['user.region'] }") String region;
+    @Bean public TaxCalculator taxCalculator1() {
+        return new TaxCalculator( region );
+    }
+    
+    @Bean public TaxCalculator taxCalculator2
+        (@Value("#{ systemProperties['user.region'] }") String region, ...) {
+    return new TaxCalculator( region );
+    }
+}
+```
+
+Equivalent way of getting to properties so:
+
+```java
+@Value("${daily.limit}")
+int maxTransfersPerDay;
+```
+
+is the same as in **SPEL**
+
+```java
+@Value("#{environment['daily.limit']}")
+int maxTransfersPerDay;
+```
+
+However you don't need to define the `PropertySourcesPlaceholderConfigurer` bean.  
+Properties returned by this always return a  `Sring`.  
+Sometimes you therefore have to cast it if you want to do some calculations on it.  
+
+```java
+@Value("#{new Integer(environment['daily.limit']) * 2}")
+@Value("#{new java.net.URL(environment['home.page']).host}")
+```
+
+Attributes **SPEL** can retrieve include
+* Spring Beans
+* Implicit references
+    * Spring Environment
+    * System Properties
+    * System Environments
+    * Others depending on context
+    
+##Annotations in Spring
+
+###@Autowired
+
+Autowired can be used to inject 
+* Constructors
+* Methods with arguments
+* Setters
+* Fields 
+
+> The `fields` can even be `private`, but it makes it harder to test
+
+Default `@Autowired` dependencies are required.  
+Override this default behavior when you want
+
+```java
+public void setAccountRepository(AccountRepository a) {
+    this.accountRepository = a;
+}
+```
+
+####Setter- vs Constructor Injection
+
+| Constructors                                  | Setters           
+| ----------------------------------------------|:-------------:
+| Mandatory Dependencies                        | Optional / Changeable dependencies 
+| Immutable Dependencies                        | Circular dependencies      
+| Concise (pass several params at once)         | Inherited Automatically
+|                                               | If constructor needs too many parameters
+
+As a general rule thought just follow your teams convention.
+
+###@Value
+
+Value can be used to inject
+* Constructors
+* Methods with arguments
+* Fields
+
+####Default Value
+
+If `@Value` is resolved and returns *null* you can provide a default value.
+
+```java
+@Autowired
+public TransferServiceImpl(@Value("${daily.limit : 100000}") int max) {
+    this.maxTransfersPerDay = max;
+}
+```
+
+For **SPEL** you use the *Elvis Operator* 
+
+```java
+@Autowired
+public setLimit(@Value("#{environment['daily.limit'] ?: 100000}") int max) {
+    this.maxTransfersPerDay = max;
+}
+```
+
+###@ComponentScan
+
+Components are scanned at startup  
+>Note that dependencies are also scanned. Therefor you should always define a `basePackage`
+
+```java
+@ComponentScan ({"com.bank.app.repository", "com.bank.app.service", "com.bank.app.controller"})
+```
+
+###@PostConstruct & @PreDestroy
+
+####@PostConstruct 
+
+Method called at startup after dependency has done all its injections.  
+So after constructors and setter injections
+>Will only work when `@ComponentScan` is defined in the configuration file. //TODO To check
+
+Can take any visibility, but must take no parameters and only return *void*
+
+####@PreDestroy
+
+Method called at shutdown prior to destroying the bean instance.  
+Called when a `ConfigurableApplicationContext` is closed.
+
+> If *application* (JVM) exits normally
+ 
+Note that this is not the destruction of the object itself as we know it in Java.
+>Will only work when `@ComponentScan` is defined in the configuration file. //TODO To check
+
+```java
+public class JdbcAccountRepository {
+    @PreDestroy
+    public void clearCache() { ... }
+}
+```
+
+You can expliticly let this callback be called
+ 
+```java
+ConfigurableApplicationContext context = SpringApplication.run(...);
+context.close();
+```
+
+Can take any visibility, but must take no parameters and only return *void*
+
+####Java Config way
+
+```java
+@Bean (initMethod="populateCache”, destroyMethod="clearCache")
+public AccountRepository accountRepository() {
+    // ...
+}
+```
+
+###Stereotype Annotations
+
+Stereotype annotations are *syntactic sugar* for `@Component`  
+They inherit from `@Component` so when you apply the `@ComponentScan ( "..." )` Spring finds them.
+
+Examples of predefined stereotype annotations are:
+
+* Service
+* Repository
+* Controller
+* Configuration
+
+>Other Spring projects may add in their own stereotype annotations.
+
+###@Resource
+
+Identifies dependencies by *name* not by *type*.  
+The difference with `@Autowired` is that it will first check by *name* before *type*
+
+Setter injection
+
+```java
+@Resource(name="jdbcAccountRepository”)
+public void setAccountRepository(AccountRepository repo) {
+    this.accountRepository = repo;
+}
+```
+
+Field injection
+
+```java
+@Resource(name="jdbcAccountRepository”)
+private AccountRepository accountRepository;
+```
+
+
+#Easy copying
+
+```java
+
+```
+
+```kotlin
+
+```
