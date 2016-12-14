@@ -1,7 +1,6 @@
 package rewards.internal.restaurant
 
 import common.money.Percentage
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.stereotype.Repository
 import java.sql.Connection
@@ -32,9 +31,7 @@ import javax.sql.DataSource
  * Re-run the test. It should fail. Examine the stack trace and see if you can understand why.
  * (If not, refer to the detailed lab instructions). We will fix this error in the next step." */
 @Repository
-class JdbcRestaurantRepository : RestaurantRepository {
-
-    private lateinit var dataSource: DataSource
+class JdbcRestaurantRepository(val dataSource: DataSource) : RestaurantRepository {
 
     /**
      * The Restaurant object cache. Cached restaurants are indexed by their merchant numbers.
@@ -48,18 +45,15 @@ class JdbcRestaurantRepository : RestaurantRepository {
 
      * @param dataSource the data source
      */
-    constructor(dataSource: DataSource) {
-        this.dataSource = dataSource
-    }
 
     override fun findByMerchantNumber(merchantNumber: String): Restaurant {
         return queryRestaurantCache(merchantNumber)
     }
 
-    @Autowired
+/*    @Autowired
     fun setDataSource(dataSource: DataSource) {
         this.dataSource = dataSource
-    }
+    }*/
 
     /**
      * Helper method that populates the [restaurant object cache][.restaurantCache] from rows in the T_RESTAURANT
