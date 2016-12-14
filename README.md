@@ -1,18 +1,21 @@
 #Spring 4.3
 
+These are just my personal notes I took during the 4 day [SpringSource Core Spring](http://www.oak3.be/course/springsource-core-spring-0) training.  
+Reflective notes.
+
 Some important concepts of Spring Framework
 
 * Focus on POJO's that have a *Single Purpose*
 * Program to interfaces
+* Testable code
+* Low Coupling
+* High Cohesion
 
 ##Spring Configuration
 
 * Java Configuration classes
 * XML Configuration
 * Annotations
-* Testable code
-* Low Coupling
-* High Cohesion
 
 ###Java Configuration Class
 
@@ -134,12 +137,13 @@ configure with different parameters
 
 ####Descriptors
 
-You can define descriptors on the bean definitions
+You can define descriptors on the bean definitions.  
+This is comparable to a `Javadoc` for a bean.
 
 ####Imports
 
 Organize your `@Configuration` classes however you like.
-Best practive: seperate out `application` beans from `infrastructure` beans.
+Best practive: seperate out `application` beans from `infrastructure` beans.    
 You can `import` other configuration files with `@import` on top of the class declaration.
 
 ```kotlin
@@ -158,7 +162,7 @@ Spring Boot:
 val context: ApplicationContext = SpringApplication.run(RewardsConfig::class.java)
 ```
 
-Using XML
+Using XML:
 
 ```java
 SpringApplication.run(MainConfig.class);
@@ -439,7 +443,8 @@ is the same as in **SPEL**
 int maxTransfersPerDay;
 ```
 
-However you don't need to define the `PropertySourcesPlaceholderConfigurer` bean.  
+However you don't need to define the `PropertySourcesPlaceholderConfigurer` bean.
+  
 Properties returned by this always return a  `Sring`.  
 Sometimes you therefore have to cast it if you want to do some calculations on it.  
 
@@ -448,7 +453,7 @@ Sometimes you therefore have to cast it if you want to do some calculations on i
 @Value("#{new java.net.URL(environment['home.page']).host}")
 ```
 
-Attributes **SPEL** can retrieve include
+Attributes **SPEL** can retrieve include:
 * Spring Beans
 * Implicit references
     * Spring Environment
@@ -518,7 +523,8 @@ public setLimit(@Value("#{environment['daily.limit'] ?: 100000}") int max) {
 ###@ComponentScan
 
 Components are scanned at startup  
->Note that dependencies are also scanned. Therefor you should always define a `basePackage`
+>Note that dependencies are also scanned. Therefor you should always define a `basePackage` as this
+may drastically improve startup time.
 
 ```java
 @ComponentScan ({"com.bank.app.repository", "com.bank.app.service", "com.bank.app.controller"})
@@ -530,7 +536,7 @@ Components are scanned at startup
 
 Method called at startup after dependency has done all its injections.  
 So after constructors and setter injections
->Will only work when `@ComponentScan` is defined in the configuration file. //TODO To check
+>Will only work when `@ComponentScan` is defined in the configuration file.
 
 Can take any visibility, but must take no parameters and only return *void*
 
@@ -542,7 +548,7 @@ Called when a `ConfigurableApplicationContext` is closed.
 > If *application* (JVM) exits normally
  
 Note that this is not the destruction of the object itself as we know it in Java.
->Will only work when `@ComponentScan` is defined in the configuration file. //TODO To check
+>Will only work when `@ComponentScan` is defined in the configuration file.
 
 ```java
 public class JdbcAccountRepository {
@@ -563,7 +569,7 @@ Can take any visibility, but must take no parameters and only return *void*
 ####Java Config way
 
 ```java
-@Bean (initMethod="populateCache”, destroyMethod="clearCache")
+@Bean (initMethod="populateCache", destroyMethod="clearCache")
 public AccountRepository accountRepository() {
     // ...
 }
