@@ -16,7 +16,7 @@ Some important concepts of Spring Framework
 
 ###Java Configuration Class
 
-functions should be declared `public`.  
+Functions should be declared `public`.  
 Each bean is given a unique id / name.
 Bean ids should not contain implementation detail.
 
@@ -71,6 +71,7 @@ public class JpaAccountRepository implements AccountRepository {..}
 ###Bean Resolution
 
 The way Spring finds the correct bean is in following order
+
 1. Look for unique bean of required type
 2. Use `@Qualifier` if supplied
 3. Try to find a mathing bean by name
@@ -179,7 +180,7 @@ Valid prefixes are:
 >Multiple files are possible
 >Able to combine with `@Configuration` annotations 
 
-Some other ways to load the Context
+Some other (older) ways to load the Context
 
 ```java
 // Load Java Configuration class
@@ -603,8 +604,48 @@ Field injection
 private AccountRepository accountRepository;
 ```
 
+##Bean Lifecycle
+
+Spring fits in to manage your application lifecycle. It may play an important role in all phases.  
+The lifecycle only applies to any class of *application*
+
+* Standalone Java or Spring Boot application
+* Integration/System Test
+* Java EE
+
+![bean lifecycle](img/bean-lifecycle.png "Lifecycle of a bean object")
+
+###Initialization
+
+![bean lifecycle](img/bean-lifecycle-initialization.png "Bean initialization steps")
+
+* Prepares for use 
+* Application services
+    * are created
+    * configured
+    * may allocate system resources
+* Application is not usable until this phase has completed
+
+//TODO: Explain this further
+
+###Use
+
+* Used by clients
+* Application services
+    * Process client requests
+    * carry out application behaviors
+* 99.9% of time is spent in this phase
+
+
+###Destruction
+* Shuts down
+* Application services
+    * release any system resources
+    * are eligable for GC
 
 #Easy copying
+
+Current page number: 98
 
 ```java
 
