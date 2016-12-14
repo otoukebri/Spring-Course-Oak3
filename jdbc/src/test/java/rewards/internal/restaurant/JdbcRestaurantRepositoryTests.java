@@ -34,7 +34,7 @@ public class JdbcRestaurantRepositoryTests {
 		assertEquals("the merchant number is wrong", "1234567890", restaurant.getNumber());
 		assertEquals("the name is wrong", "AppleBees", restaurant.getName());
 		assertEquals("the benefitPercentage is wrong", Percentage.valueOf("8%"), restaurant.getBenefitPercentage());
-		assertEquals("the benefit availability policy is wrong", JdbcRestaurantRepository.AlwaysAvailable.INSTANCE,
+		assertEquals("the benefit availability policy is wrong", JdbcRestaurantRepository.AlwaysAvailable.Companion.getINSTANCE(),
 				restaurant.getBenefitAvailabilityPolicy());
 	}
 

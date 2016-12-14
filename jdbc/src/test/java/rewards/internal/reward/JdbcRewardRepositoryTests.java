@@ -1,7 +1,9 @@
 package rewards.internal.reward;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -9,18 +11,16 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-
+import common.datetime.SimpleDate;
+import common.money.MonetaryAmount;
+import common.money.Percentage;
 import rewards.AccountContribution;
 import rewards.Dining;
 import rewards.RewardConfirmation;
 import rewards.internal.account.Account;
-import common.datetime.SimpleDate;
-import common.money.MonetaryAmount;
-import common.money.Percentage;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Tests the JDBC reward repository with a test data source to verify data access and relational-to-object mapping
@@ -64,8 +64,8 @@ public class JdbcRewardRepositoryTests {
 		//	TODO-02: Use the JdbcTemplate to query for a map of all values in the T_REWARD table based on the
 		// 	confirmationNumber. After making the changes, execute the test class to verify its 
 		//	successful execution.
-		
-		Map<String, Object> values = null;
+		String sql = "select * from T_REWARD where CONFIRMATION_NUMBER = ?";
+		Map<String, Object> values = jdbcTemplate.queryForMap(sql, confirmation.getConfirmationNumber());
 		verifyInsertedValues(confirmation, dining, values);
 	}
 
@@ -81,7 +81,7 @@ public class JdbcRewardRepositoryTests {
 
 	private int getRewardCount() throws SQLException {
 		// TODO-01: Use the JdbcTemplate to query for the number of rows in the T_REWARD table
-		return -1;
+		return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM T_REWARD", Integer.class);
 	}
 
 	private DataSource createTestDataSource() {
