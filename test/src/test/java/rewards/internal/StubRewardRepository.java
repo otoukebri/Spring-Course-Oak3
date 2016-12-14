@@ -1,8 +1,10 @@
 package rewards.internal;
 
-import java.util.Random;
-
 import org.apache.log4j.Logger;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Repository;
+
+import java.util.Random;
 
 import rewards.AccountContribution;
 import rewards.Dining;
@@ -12,6 +14,8 @@ import rewards.internal.reward.RewardRepository;
 /**
  * A dummy reward repository implementation.
  */
+@Repository
+@Profile("stub")
 public class StubRewardRepository implements RewardRepository {
 
 	private Logger logger = Logger.getLogger(StubRewardRepository.class);

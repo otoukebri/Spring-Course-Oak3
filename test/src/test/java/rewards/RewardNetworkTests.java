@@ -1,15 +1,19 @@
 package rewards;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.springframework.boot.SpringApplication;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import common.money.MonetaryAmount;
+import config.RewardsConfig;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * A system test that verifies the components of the RewardNetwork application
@@ -28,6 +32,8 @@ import common.money.MonetaryAmount;
  *            with the @Repository annotation (WITHOUT specifying any profile yet).
  * 			- Rerun the current test, it should fail.  Why?
  */
+//We now have an ambiguity with two classes implementing the interface. Spring is unable to
+//decide which concrete class to AutoWire into the test
 
 /* TODO 03: Using the @Profile annotation, assign the 'jdbc' profile to all Jdbc*Repository classes 
  * 			  (such as JdbcAccountRepository).  (Be sure to annotate the actual repository classes in
@@ -42,12 +48,14 @@ import common.money.MonetaryAmount;
 /* TODO 04: Change active-profile to "jdbc". Rerun the test, it should pass.  
  * 			Which repository implementations are being used now?
  */
+// The concrete classes used in the main package
 
 /* TODO 05: Go to corresponding step in TestInfrastructureDevConfig.
  */
 
 /* TODO 06: Now that the bean 'dataSource' is specific to the jdbc-dev profile, should we expect 
  * 			this test to be successful?
+ //no because our current active profile is different from where our datasource is defined
  * 			Make the appropriate changes so the current test uses 2 profiles ('jdbc' and 'jdbc-dev').
  * 			Rerun the test, it should pass.
  */
@@ -60,69 +68,83 @@ import common.money.MonetaryAmount;
 
 /* TODO 08: Bonus question: see the 'Optional Step' inside the Detailed Instructions.
  */
-
+@RunWith(SpringJUnit4ClassRunner.class)
+@ActiveProfiles({"jdbc", "jdbc-dev"})
 public class RewardNetworkTests {
 
-	
-	/**
-	 * The object being tested.
-	 */
-	private RewardNetwork rewardNetwork;
 
-	/**
-	 * Need this to enable clean shutdown at the end of the application
-	 */
-	private ConfigurableApplicationContext context;
+    /**
+     * The object being tested.
+     */
+    @Autowired
+    private RewardNetwork rewardNetwork;
 
-	@Before
-	public void setUp() {
-		// Create the test configuration for the application from one file
-		context = SpringApplication.run(TestInfrastructureConfig.class);
-		// Get the bean to use to invoke the application
-		rewardNetwork = context.getBean(RewardNetwork.class);
-	}
+    /**
+     * Need this to enable clean shutdown at the end of the application
+     */
+    private ConfigurableApplicationContext context;
 
-	@After
-	public void tearDown() throws Exception {
-		// simulate the Spring bean destruction lifecycle:
-		if (context != null)
-			context.close();
-	}
+//    @Before
+//    public void setUp() {
+//        // Create the test configuration for the application from one file
+//        context = SpringApplication.run(TestInfrastructureConfig.class);
+//        // Get the bean to use to invoke the application
+//        rewardNetwork = context.getBean(RewardNetwork.class);
+//    }
 
-	@Test
-	public void testRewardForDining() {
-		// create a new dining of 100.00 charged to credit card
-		// '1234123412341234' by merchant '123457890' as test input
-		Dining dining = Dining.createDining("100.00", "1234123412341234",
-				"1234567890");
+//	@After
+//	public void tearDown() throws Exception {
+//		// simulate the Spring bean destruction lifecycle:
+//		if (context != null)
+//			context.close();
+//	}
 
-		// call the 'rewardNetwork' to test its rewardAccountFor(Dining) method
-		RewardConfirmation confirmation = rewardNetwork
-				.rewardAccountFor(dining);
+    @Test
+    public void testRewardForDining() {
+        // create a new dining of 100.00 charged to credit card
+        // '1234123412341234' by merchant '123457890' as test input
+        Dining dining = Dining.createDining("100.00", "1234123412341234",
+                "1234567890");
 
-		// assert the expected reward confirmation results
-		assertNotNull(confirmation);
-		assertNotNull(confirmation.getConfirmationNumber());
+        // call the 'rewardNetwork' to test its rewardAccountFor(Dining) method
+        RewardConfirmation confirmation = rewardNetwork
+                .rewardAccountFor(dining);
 
-		// assert an account contribution was made
-		AccountContribution contribution = confirmation
-				.getAccountContribution();
-		assertNotNull(contribution);
+        // assert the expected reward confirmation results
+        assertNotNull(confirmation);
+        assertNotNull(confirmation.getConfirmationNumber());
 
-		// the contribution account number should be '123456789'
-		assertEquals("123456789", contribution.getAccountNumber());
+        // assert an account contribution was made
+        AccountContribution contribution = confirmation
+                .getAccountContribution();
+        assertNotNull(contribution);
 
-		// the total contribution amount should be 8.00 (8% of 100.00)
-		assertEquals(MonetaryAmount.valueOf("8.00"), contribution.getAmount());
+        // the contribution account number should be '123456789'
+        assertEquals("123456789", contribution.getAccountNumber());
 
-		// the total contribution amount should have been split into 2
-		// distributions
-		assertEquals(2, contribution.getDistributions().size());
+        // the total contribution amount should be 8.00 (8% of 100.00)
+        assertEquals(MonetaryAmount.valueOf("8.00"), contribution.getAmount());
 
-		// each distribution should be 4.00 (as both have a 50% allocation)
-		assertEquals(MonetaryAmount.valueOf("4.00"), contribution
-				.getDistribution("Annabelle").getAmount());
-		assertEquals(MonetaryAmount.valueOf("4.00"), contribution
-				.getDistribution("Corgan").getAmount());
-	}
+        // the total contribution amount should have been split into 2
+        // distributions
+        assertEquals(2, contribution.getDistributions().size());
+
+        // each distribution should be 4.00 (as both have a 50% allocation)
+        assertEquals(MonetaryAmount.valueOf("4.00"), contribution
+                .getDistribution("Annabelle").getAmount());
+        assertEquals(MonetaryAmount.valueOf("4.00"), contribution
+                .getDistribution("Corgan").getAmount());
+    }
+
+    @Configuration
+    @Import({
+            TestInfrastructureDevConfig.class,
+            TestInfrastructureProductionConfig.class,
+            RewardsConfig.class
+    })
+    static class TestInfrastructureConfig {
+        public LoggingBeanPostProcessor loggingBean() {
+            return new LoggingBeanPostProcessor();
+        }
+    }
 }
