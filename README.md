@@ -52,7 +52,8 @@ open class RewardsConfig {
 
 ###Disambiguation
 Beware of duplicate bean definitions.   
-It is *not* illegal to define the same bean more than once. You will just get the last bean Spring sees defined.
+It is *not* illegal to define the same bean more than once. You will just get the last bean Spring 
+sees defined.
   
 To prevent this behavior look at `@Qualifier`
 
@@ -681,7 +682,7 @@ Spring uses either the build in `proxy` classes available in the `JDK` or use a 
 * Used by clients
 * Application services
     * Process client requests
-    * carry out application behaviors@
+    * Carry out application behaviors
 * 99.9% of time is spent in this phase
 
 ###Destruction

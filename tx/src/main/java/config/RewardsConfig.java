@@ -5,6 +5,7 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import rewards.RewardNetwork;
 import rewards.internal.RewardNetworkImpl;
@@ -20,6 +21,7 @@ import rewards.internal.reward.RewardRepository;
 //	@Transactional annotation.  Save all work, run RewardNetworkTests.  It should pass.  
 
 @Configuration
+@EnableTransactionManagement
 public class RewardsConfig {
 
 	@Autowired
