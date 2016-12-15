@@ -623,8 +623,6 @@ The lifecycle only applies to any class of *application*
 
 ###Initialization
 
-![bean lifecycle](img/bean-lifecycle-initialization.png "Bean initialization steps")
-
 * Prepares for use 
 * Application services
     * are created
@@ -632,26 +630,90 @@ The lifecycle only applies to any class of *application*
     * may allocate system resources
 * Application is not usable until this phase has completed
 
-//TODO: Explain this further
+![bean lifecycle](img/bean-lifecycle-initialization.png "Bean lifecycle")
+
+####Load Bean Definitions
+ * The `@Configuration` classes are processed and `@Components` are scanned and or XML files are
+ parsed
+ * Bean definitions get added to the *BeanFactory*
+ * Special *BeanFactoryPostProcessor* beans invoked
+ 
+After that each bean is instantiated. Created in the correct order.  
+Next each bean goes through a post-processing phase `BeanPostProcessors`  
+Now the bean is fully initialized and ready to be use
+ 
+####BeanFactoryPostProcessor
+
+Applies transformations to bean definitions (so before the object are created)  
+Some use cases involve reading properties and registering custom scopes.  
+For example the [`PropertySourcesPlaceholderConfigurer`](#Environment)  
+You can write your own, but it is very uncommon. You do this by implementing the
+`BeanFactoryPostProcessor` interface
+
+####Initializer Extension Point
+
+A special case of BeanPostProcessor.  
+It causes the `@PostConstruct` to be called.  
+The way this works is by using a BPP for example the `CommonAnnotationBeanPostProcessor` enables
+this functionality
+
+####BeanPostProcessors Extension Point 
+
+Important extension point in Spring. This allows it to modify bean instance in any way.  
+In order to use this functionality the user must implement the `BeanPostProcessor` interface.  
+They will automatically be picked up by the Spring Framework.
+
+####Configuration Lifecycle
+
+![bean configuration lifecycle](img/bean-configuration-lifecycle.png "Bean Configuration Lifecycle")
 
 ###Use
+
+When you invoke a bean obtained from the context.  
+Spring can add functionality to your requested object this is why the `proxy pattern` has been 
+implemented on your Spring beans. This happened during the initialization phase of the lifecycle.
+
+Spring uses either the build in `proxy` classes available in the `JDK` or use a library called
+`CGLIB` to do more advanced proxy-ing.
+
+![CGLib vs JDK](img/cglib-jdk-proxy.png "CGLIB vs JDK")
 
 * Used by clients
 * Application services
     * Process client requests
-    * carry out application behaviors
+    * carry out application behaviors@
 * 99.9% of time is spent in this phase
 
-
 ###Destruction
+
+When you close a context the destruction phase completes.
+
+It destroys beans instances if instructed and calls their clean-up methods. Beans must have a
+destroy method defined (a no-arg method returning void)
+
+After the context is destroyed it can not be used again. 
+
 * Shuts down
 * Application services
     * release any system resources
-    * are eligable for GC
+    * are eligible for GC
+
+##Testing Spring
+
+###Unit testing 
+
+Basic `JUnit4` tests
+
+###Integration testing
+
+Central support class is called `SpringJUnit4ClassRunner` since Spring 4.3 they added a shorten name
+class called: `SpringRunner`.   
+This class allows you to share an `ApplicationContext`
 
 #Easy copying
 
-Current page number: 98
+Current page number: 226
+Using Spring's Test Support
 
 ```java
 
