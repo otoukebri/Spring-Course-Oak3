@@ -4,11 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import rewards.internal.account.Account;
-import rewards.internal.account.Beneficiary;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import accounts.AccountManager;
+import rewards.internal.account.Account;
+import rewards.internal.account.Beneficiary;
 
 /**
  * A Spring MVC @Controller controller handling requests to view and modify
@@ -49,7 +49,7 @@ public class AccountController {
 		model.addAttribute("accounts", accountManager.getAllAccounts());
 
 		// TODO-03: Refactor this to return just the logical view name
-		return "/WEB-INF/views/accountList.jsp";
+		return "accountList";
 	}
 
 	// TODO-06: Implement the /accountDetails request handling method.
@@ -63,4 +63,9 @@ public class AccountController {
 	// correct logical view name.
 	// 5. Save all work
 
+	@RequestMapping("/accountDetails")
+	public String accountDetails(Model model, @RequestParam("entityId") long accountId) {
+		model.addAttribute("account", accountManager.getAccount(accountId));
+		return "accountDetails";
+	}
 }

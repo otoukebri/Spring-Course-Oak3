@@ -1,16 +1,16 @@
 package accounts.web;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.ui.ExtendedModelMap;
 
-import rewards.internal.account.Account;
+import java.util.List;
+
 import accounts.internal.StubAccountManager;
+import rewards.internal.account.Account;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * A JUnit test case testing the AccountController. The AccountController has
@@ -39,7 +39,7 @@ public class AccountControllerTests {
 		// TODO-04: Change this to expect a logical view name
 		// Re-run the test and make sure it passes
 		//
-		assertEquals("/WEB-INF/views/accountList.jsp", viewName);
+		assertEquals("accountList", viewName);
 	}
 
 	// TODO-05: Restart the server. You should still be able to see the
@@ -50,6 +50,16 @@ public class AccountControllerTests {
 	// retrieve.
 	// Create assertions for model contents and view name.
 	// When complete run the test. It should pass.
+
+	@Test
+	public void testHandleAccountList() throws Exception {
+		ExtendedModelMap model = new ExtendedModelMap();
+		String viewName = controller.accountDetails(model, 0);
+
+		final Account account = (Account) model.get("account");
+		assertNotNull(account);
+		assertEquals(Long.valueOf(0), account.getEntityId());
+	}
 
 
 	// TODO-08: Restart the server. You should now be able to click
