@@ -1,21 +1,22 @@
 package accounts.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.util.Random;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.util.Random;
+
+import common.money.Percentage;
 import rewards.internal.account.Account;
 import rewards.internal.account.Beneficiary;
-import common.money.Percentage;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class AccountClientTests {
 	
@@ -34,7 +35,7 @@ public class AccountClientTests {
 		//	Use the restTemplate to retrieve an array containing all Account instances.
 		//  Use BASE_URL to help define the URL you need: BASE_URL + "/..."
 		//	Run the test and ensure that it passes.
-		Account[] accounts = null; // Modify this line to use the restTemplate
+		Account[] accounts = restTemplate.getForObject(BASE_URL + "/accounts", Account[].class);
 		
 		assertNotNull(accounts);
 		assertTrue(accounts.length >= 21);
@@ -44,12 +45,11 @@ public class AccountClientTests {
 	}
 	
 	@Test
-	@Ignore
 	public void getAccount() {
 		//	TODO 05: Remove the @Ignore on this test method.
 		//	Use the restTemplate to retrieve the Account with id 0 using a URI template
 		//	Run the test and ensure that it passes.
-		Account account = null; // Modify this line to use the restTemplate
+		Account account = restTemplate.getForObject(BASE_URL + "/accounts/{id}", Account.class, 0);
 		
 		assertNotNull(account);
 		assertEquals("Keith and Keri Donald", account.getName());
@@ -58,20 +58,20 @@ public class AccountClientTests {
 	}
 	
 	@Test
-	@Ignore
 	public void createAccount() {
 		// use a unique number to avoid conflicts
 		String number = String.format("12345%4d", random.nextInt(10000));
 		Account account = new Account(number, "John Doe");
 		account.addBeneficiary("Jane Doe");
-		
+		final URI newAccountLocation = restTemplate.postForLocation(BASE_URL + "/accounts", account);
+
 		//	TODO 08: Remove the @Ignore on this test method.
 		//	Create a new Account by POSTing to the right URL and store its location in a variable
 
 		//	TODO 09: Retrieve the Account you just created from the location that was returned.
 		//	Run this test.  Whether it passes or not, proceed with the next step.
-		Account retrievedAccount = null; // Modify this line to use the restTemplate
-		
+		final Account retrievedAccount = restTemplate.getForObject(newAccountLocation, Account.class);
+
 		assertEquals(account.getNumber(), retrievedAccount.getNumber());
 		
 		Beneficiary accountBeneficiary = account.getBeneficiaries().iterator().next();
