@@ -11,6 +11,10 @@ Some important concepts of Spring Framework
 * Low Coupling
 * High Cohesion
 
+Take a look at the mock exams or use the 
+[interactive quiz online](https://www.goconqr.com/en/p/4316687-core-spring-4-2-certification-mock-exam-quizzes) 
+to test your knowledge.
+
 ##Spring Configuration
 
 * Java Configuration classes
@@ -131,19 +135,20 @@ Best pratice is to use annotations as much as possible.
 
 In real life you will see these two being mixed.  
 Beans that are maintained by the company will be annotated and legacy code or code from dependencies
-will life in a Java configuration file.   
+will live in a Java configuration file.   
  
-One example where a Java configuration would be preferred is for a Datasource that you need to 
+One example where a Java configuration would be preferred is for a `Datasource` that you need to 
 configure with different parameters
 
 ####Descriptors
 
 You can define descriptors on the bean definitions.  
+With the `@Descriptor` annotation  
 This is comparable to a `Javadoc` for a bean.
 
 ####Imports
 
-Organize your `@Configuration` classes however you like.
+Organize your `@Configuration` classes however you like.  
 Best practive: seperate out `application` beans from `infrastructure` beans.    
 You can `import` other configuration files with `@import` on top of the class declaration.
 
@@ -212,7 +217,7 @@ val transferService = context.getBean("transferService") as TransferService
 - Use typed method to avoid cast
 
 ```kotlin
-val transferService = context.getBean("transferService", TransferService::class.java) as TransferService
+val transferService = context.getBean("transferService", TransferService::class.java)
 ```
 
 - No need for bean id if type is unique
@@ -281,7 +286,7 @@ Is a fallback for complex configuration in XML.
 implementing `FactoryBean<T>` interface allows you to have the factory pattern in place for XML
 configurations.
 
->Even Java Configuration may use factory beans (but why should you)
+>Even Java Configuration may use factory beans  
 
 They are widely used in older frameworks  
 Some well known examples are:
@@ -317,6 +322,7 @@ Some examples are:
 ##Property Values
 
 Externalize your properties.  
+It allows for a more readable and flexible way of configuring your Spring application.
 
 ###Environment
 
@@ -371,10 +377,11 @@ Beans can be grouped according to for example their environment they live in.
 >Beans without a profile will always be available / loaded
 
 They way you define them is with the `@Profile` annotation.  
-You can either place them on a class or a method header
+You can either place them on a class or a method header.  
+This way you can split up your configuration file for each environment.
 
 ```kotlin
-@onfiguration
+@Configuration
 @Profile("dev")
 class DevConfig
 ```
@@ -412,7 +419,8 @@ class Test
 
 ##SPEL 
 
-Short for Spring Expression Language
+Short for Spring Expression Language  
+Allows you to inject some logic in a `String` value
 
 ```java
 @Configuration
@@ -472,7 +480,9 @@ Autowired can be used to inject
 * Setters
 * Fields 
 
-> The `fields` can even be `private`, but it makes it harder to test
+> The `fields` can even be `private`, but it makes it harder to test  
+
+> Since Spring follows the standards for DI you can also use `@Inject`
 
 Default `@Autowired` dependencies are required.  
 Override this default behavior when you want
@@ -685,6 +695,13 @@ Spring uses either the build in `proxy` classes available in the `JDK` or use a 
     * Carry out application behaviors
 * 99.9% of time is spent in this phase
 
+| JDK Proxy                             | CGLib Proxy           
+|---------------------------------------|:---------------------------------------------:
+| Also called *dynamic* proxies         | **NOT** built into JDK 
+| API is built into the JDK             | Included in Spring jars      
+| Requirements: Java Interface(s)       | Used when interfaces not available
+| *All* interfaces proxied              | Cannot be applied to final classes or methods
+
 ###Destruction
 
 When you close a context the destruction phase completes.
@@ -707,14 +724,229 @@ Basic `JUnit4` tests
 
 ###Integration testing
 
+Tests the interaction of multiple units working together.  
 Central support class is called `SpringJUnit4ClassRunner` since Spring 4.3 they added a shorten name
 class called: `SpringRunner`.   
 This class allows you to share an `ApplicationContext`
 
-#Easy copying
+####Databases
 
-Current page number: 226
-Using Spring's Test Support
+It is very common to test databases in integration tests.  
+You can use an in memory database for this.  
+>Not always a good fit since you want to keep your tests as close as possible to the real environment.
+
+Common requirement is to populate the DB before every test run.   
+We can use the `@Sql` annotation for this.
+
+```java
+@Sql(scripts = "/test-user-data.sql",
+     executionPhase = ExecutionPhase.AFTER_TEST_METHOD,
+     config = @SqlConfig(
+             errorMode = ErrorMode.FAIL_ON_ERROR, 
+             commentPrefix = "//", separator = "@@"
+             )
+     )
+@Test
+fun testFunctionName() { }
+```
+
+##AOP
+
+Aspect Oriented Programming.  
+Generic functionality that is needed in many places in your application.  
+
+When you want to implement a feature and you describe this feature as following:
+
+>Perform a role-based security check before **EVERY** application method.
+
+It is a clear sign this requirement is a *cross-cutting concern*
+
+Examples:
+* Logging and Tracing
+* Transactional Management
+* Security
+* Caching
+* Error Handling
+* ...
+
+###Limitations
+
+* Can only advise *non-private* methods.
+* Can only apply aspects to *Spring Beans*
+* Limitations of weaving with proxies
+    * consider the following: When using proxies suppose a method `a()` calls method `b()` on the same
+    class/interface the advice will never be executed for method `b()`
+
+###How
+
+Spring creates a proxy around your object.  
+This new proxy object intercepts all the request to this object. This way you can decide to act upon it.
+
+![How are aspects applied in your code](img/how-aspects-are-applied.png "How are aspects applied in your code")
+
+###AOP Concepts
+
+####Join Point
+
+A point in the execution of a program such as a method call or when an exception is thrown.  
+Spring AOP uses AspectJ's pointcut expression language for selecting where to apply advice.  
+Spring AOP supports a practical subset
+
+####Pointcut
+
+An expression that selects one or more Join Points
+
+####Advice
+
+Code to be executed at each selected Join Point
+
+####Aspect
+
+A module that encapsulates pointcuts and advice
+
+####Weaving
+
+Technique by which aspects are combined with main code
+
+###Implement the Aspect
+
+Best practice is to keep all aspects inside of a package.  
+This way you can have one configuration class that keeps them all together.  
+You should annotate the configuration class with yet another annotation `@EnabledAspectJAutoProxy` in order 
+for Spring to pick up all your aspects.
+
+```kotlin
+@Configuration
+@EnableAspectJAutoProxy
+@ComponentScan(basePackages=“com.example”)
+class AspectConfig 
+```
+
+###Writing Expressions
+
+![How to write these point cut expressions](img/writing-expressions.png "How to write these point cut expressions")
+
+Examples
+
+```java
+execution(void send*(String))
+```
+
+Any method starting with send that takes a single String parameter and has a void return type.
+
+```java
+execution(* send(int, ..))
+```
+
+Any method named send whose first parameter is an int (the .. signifies 0 or more parameters may follow)
+
+You can also restrict by class
+
+```java
+execution(void example.MessageServiceImpl.*(..))
+```
+
+Any void method in hte *MessageServiceImpl* class (including sub-classes)  
+Ignored when another implementation is used.
+
+Or by interface
+
+```java
+execution(void example.MessageService.send(*))
+```
+
+Any void method *send* taking one argument in any object implementing *MessageService*  
+More flexible choice - works if implementation changes.
+
+Or even by annotation
+
+```java
+execution(@javax.annotation.security.RolesAllowed void send*(..))
+```
+
+Any void method whose name starts whit *send* that is annotated with the `@RolesAllowed` annotation.  
+Ideal for your own classes.  
+This is also how a lot of the build in Spring AOP aspects work like `@Transactional`
+
+Restrict by package
+
+```java
+execution(* rewards..restaurant.*.*(..))
+```
+
+There may be several directories between rewards and restaurant
+
+```java
+execution(* *..restaurant.*.*(..))
+```
+
+Any sub-package called restaurant
+
+####Before advice
+
+Using the `@Before` annotation
+
+An example of a logging aspect that monitors all *setter* methods.  
+
+```java
+@Aspect
+@Component
+public class PropertyChangeTracker {
+    private Logger logger = Logger.getLogger(getClass());
+    @Before("execution(void set*(*))")
+    public void trackChange(Joinpoint point) {
+        String name = point.getSignature().getName();
+        Object newValue = point.getArgs()[0];
+        logger.info(name + " about to change to " + newValue + " on " + point.getTarget());
+    }
+}
+```
+>With the help of the `JoinPoint` object we get more information.
+
+####AfterReturning Advice
+
+Run after the target has done it's thing
+
+```java
+@AfterReturning(value="execution(* service..*.*(..))",
+returning="reward")
+public void audit(JoinPoint jp, Reward reward) {
+    auditService.logEvent(jp.getSignature() +
+            "returns the following reward object :" + reward.toString() );
+}
+```
+
+You get the value *Reward* that was returned by the target.
+
+####AfterThrowing
+
+Only invokes advice if the right exception type is thrown.  
+The `@AfterThrowing` advice will **NOT** stop the exception from propagating.  
+However you can map it to a different type of exception.
+
+```java
+@AfterThrowing(value="execution(* *..Repository.*(..))", throwing="e")
+public void report(JoinPoint jp, DataAccessException e) {
+    mailService.emailFailure("Exception in repository", jp, e);
+}
+```
+
+####After
+
+Called regardless of whether an exception has been thrown by the target or not.
+
+####Around
+
+Inherits from `JoinPoint` and adds the `proceed()` method.  
+Combination of `@Before` and `@After`
+
+![Around](img/around-advice.png "Around")
+
+Use the `point.proceed()` on the `ProceedingJoinPoint` object to control the flow of the target.
+
+#This is just here to allow for some easy copying
+
+Current page number: 99
 
 ```java
 
